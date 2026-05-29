@@ -7,7 +7,7 @@ import utgLogo from '../../assets/utg-logo.png';
 import {
   FiHome, FiUsers, FiBook, FiCalendar, FiBarChart2,
   FiLogOut, FiMenu, FiX, FiSun, FiMoon, FiUser,
-  FiCheckSquare, FiSettings
+  FiCheckSquare,
 } from 'react-icons/fi';
 
 const Sidebar = ({ role }) => {
