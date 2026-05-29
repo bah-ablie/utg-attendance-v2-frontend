@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiBook, FiUsers } from 'react-icons/fi';
+import { FiUsers } from 'react-icons/fi';
 import API from '../../api/axiosConfig';
 import toast from 'react-hot-toast';
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiBook, FiCheckSquare, FiTrendingUp, FiAward } from 'react-icons/fi';
-import { RadialBarChart, RadialBar, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import API from '../../api/axiosConfig';
 import { useAuth } from '../../context/AuthContext';
 

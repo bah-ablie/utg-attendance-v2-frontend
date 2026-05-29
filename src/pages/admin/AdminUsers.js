@@ -82,16 +82,6 @@ const AdminUsers = () => {
     }
   };
 
-  const handleDeactivate = async (id) => {
-    try {
-      await API.put(`/users/${id}/deactivate`);
-      toast.success('User deactivated successfully!');
-      fetchUsers();
-    } catch (error) {
-      toast.error('Error deactivating user');
-    }
-  };
-
   const resetForm = () => {
     setEditingUser(null);
     setFormData({

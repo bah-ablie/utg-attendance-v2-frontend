@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiDownload, FiBarChart2 } from 'react-icons/fi';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import API from '../../api/axiosConfig';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
