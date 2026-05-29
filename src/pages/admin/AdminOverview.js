@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiUsers, FiBook, FiBarChart2 } from 'react-icons/fi';
+import { FiUsers, FiBook } from 'react-icons/fi';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import API from '../../api/axiosConfig';
 
