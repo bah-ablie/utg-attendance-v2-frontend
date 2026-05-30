@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'https://utg-attendance-v2-backend.onrender.com'
+  baseURL: 'https://utg-attendance-v2-backend.onrender.com/api'
 });
 
 // Attach token to every request
