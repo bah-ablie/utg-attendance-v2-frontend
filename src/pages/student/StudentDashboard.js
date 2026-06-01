@@ -10,7 +10,7 @@ const StudentDashboard = () => {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
       <Sidebar role="student" />
-      <div style={{ flex: 1, overflow: 'auto' }}>
+      <div style={{ flex: 1, overflow: 'auto', paddingTop: window.innerWidth <= 768 ? '60px' : '0' }}>
         <Routes>
           <Route path="/" element={<StudentOverview />} />
           <Route path="/courses" element={<StudentCourses />} />
