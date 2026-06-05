@@ -15,19 +15,12 @@ const AdminCourses = () => {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState('');
   const [formData, setFormData] = useState({
-    courseName: '',
-    courseCode: '',
-    department: '',
-    description: '',
-    lecturer: '',
-    credits: 3,
-    semester: 'First',
-    academicYear: '2025/2026'
+    courseName: '', courseCode: '', department: '',
+    description: '', lecturer: '', credits: 3,
+    semester: 'First', academicYear: '2025/2026'
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     try {
@@ -121,14 +114,9 @@ const AdminCourses = () => {
   const resetForm = () => {
     setEditingCourse(null);
     setFormData({
-      courseName: '',
-      courseCode: '',
-      department: '',
-      description: '',
-      lecturer: '',
-      credits: 3,
-      semester: 'First',
-      academicYear: '2025/2026'
+      courseName: '', courseCode: '', department: '',
+      description: '', lecturer: '', credits: 3,
+      semester: 'First', academicYear: '2025/2026'
     });
   };
 
@@ -136,6 +124,20 @@ const AdminCourses = () => {
     course.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     course.courseCode.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Enrollment badge style
+  const enrollBadge = (enrolledBy) => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    padding: '0.15rem 0.5rem',
+    borderRadius: '9999px',
+    fontSize: '0.65rem',
+    fontWeight: '700',
+    marginLeft: '0.4rem',
+    backgroundColor: enrolledBy === 'admin'
+      ? 'rgba(79,70,229,0.12)' : 'rgba(16,185,129,0.12)',
+    color: enrolledBy === 'admin' ? '#4F46E5' : '#10B981'
+  });
 
   if (loading) return (
     <div className="loading-spinner" style={{ height: '100vh' }}>
@@ -169,7 +171,7 @@ const AdminCourses = () => {
           <input
             type="text"
             className="form-control"
-            placeholder="Search courses..."
+            placeholder="Search by course name or code..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ paddingLeft: '2.75rem' }}
@@ -221,7 +223,10 @@ const AdminCourses = () => {
 
               {/* Students */}
               <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between',
+                  alignItems: 'center', marginBottom: '0.75rem'
+                }}>
                   <span style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-primary)' }}>
                     <FiUsers style={{ marginRight: '0.5rem' }} />
                     Students ({course.students?.length || 0})
@@ -234,20 +239,36 @@ const AdminCourses = () => {
                   </button>
                 </div>
 
+                {/* Legend */}
+                {course.students?.length > 0 && (
+                  <div style={{
+                    display: 'flex', gap: '0.75rem',
+                    marginBottom: '0.5rem', flexWrap: 'wrap'
+                  }}>
+                    <span style={enrollBadge('admin')}>🔵 Admin enrolled</span>
+                    <span style={enrollBadge('lecturer')}>🟢 Lecturer enrolled</span>
+                  </div>
+                )}
+
                 {course.students?.length > 0 ? (
-                  <div style={{ maxHeight: '150px', overflowY: 'auto' }}>
-                    {course.students.map((student) => (
-                      <div key={student._id} style={{
+                  <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
+                    {course.students.map((enrollment) => (
+                      <div key={enrollment._id} style={{
                         display: 'flex', justifyContent: 'space-between',
-                        alignItems: 'center', padding: '0.375rem 0',
+                        alignItems: 'center', padding: '0.4rem 0',
                         borderBottom: '1px solid var(--border-color)'
                       }}>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                          {student.fullName}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                            {enrollment.student?.fullName}
+                          </span>
+                          <span style={enrollBadge(enrollment.enrolledBy)}>
+                            {enrollment.enrolledBy === 'admin' ? 'Admin' : 'Lecturer'}
+                          </span>
+                        </div>
                         <button
                           className="btn btn-danger btn-sm"
-                          onClick={() => handleUnenroll(course._id, student._id)}
+                          onClick={() => handleUnenroll(course._id, enrollment.student?._id)}
                           style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem' }}
                         >
                           Remove
@@ -278,14 +299,12 @@ const AdminCourses = () => {
                 <FiX />
               </button>
             </div>
-
             <form onSubmit={handleSubmit}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div className="form-group">
                   <label className="form-label">Course Name</label>
                   <input
-                    type="text"
-                    className="form-control"
+                    type="text" className="form-control"
                     placeholder="e.g. Introduction to Programming"
                     value={formData.courseName}
                     onChange={(e) => setFormData({ ...formData, courseName: e.target.value })}
@@ -295,8 +314,7 @@ const AdminCourses = () => {
                 <div className="form-group">
                   <label className="form-label">Course Code</label>
                   <input
-                    type="text"
-                    className="form-control"
+                    type="text" className="form-control"
                     placeholder="e.g. CS101"
                     value={formData.courseCode}
                     onChange={(e) => setFormData({ ...formData, courseCode: e.target.value })}
@@ -306,8 +324,7 @@ const AdminCourses = () => {
                 <div className="form-group">
                   <label className="form-label">Department</label>
                   <input
-                    type="text"
-                    className="form-control"
+                    type="text" className="form-control"
                     placeholder="e.g. Computer Science"
                     value={formData.department}
                     onChange={(e) => setFormData({ ...formData, department: e.target.value })}
@@ -331,8 +348,7 @@ const AdminCourses = () => {
                 <div className="form-group">
                   <label className="form-label">Credits</label>
                   <input
-                    type="number"
-                    className="form-control"
+                    type="number" className="form-control"
                     value={formData.credits}
                     onChange={(e) => setFormData({ ...formData, credits: e.target.value })}
                     min="1" max="6"
@@ -352,8 +368,7 @@ const AdminCourses = () => {
                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                   <label className="form-label">Academic Year</label>
                   <input
-                    type="text"
-                    className="form-control"
+                    type="text" className="form-control"
                     placeholder="e.g. 2025/2026"
                     value={formData.academicYear}
                     onChange={(e) => setFormData({ ...formData, academicYear: e.target.value })}
@@ -366,12 +381,10 @@ const AdminCourses = () => {
                     placeholder="Enter course description"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    rows={3}
-                    style={{ resize: 'vertical' }}
+                    rows={3} style={{ resize: 'vertical' }}
                   />
                 </div>
               </div>
-
               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
                 <button type="button" className="btn btn-outline" onClick={() => setShowModal(false)}>
                   Cancel
@@ -396,7 +409,7 @@ const AdminCourses = () => {
               </button>
             </div>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem', fontSize: '0.875rem' }}>
-              Enrolling student in: <strong>{selectedCourse?.courseName}</strong>
+              Enrolling in: <strong>{selectedCourse?.courseName}</strong>
             </p>
             <div className="form-group">
               <label className="form-label">Select Student</label>
@@ -407,10 +420,12 @@ const AdminCourses = () => {
               >
                 <option value="">Choose a student...</option>
                 {students
-                  .filter(s => !selectedCourse?.students?.find(enrolled => enrolled._id === s._id))
+                  .filter(s => !selectedCourse?.students?.find(
+                    e => e.student?._id === s._id || e.student === s._id
+                  ))
                   .map((s) => (
                     <option key={s._id} value={s._id}>
-                      {s.fullName} — {s.matriculationNumber}
+                      {s.fullName} — {s.matriculationNumber || 'No matric'}
                     </option>
                   ))}
               </select>
