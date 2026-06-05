@@ -8,6 +8,7 @@ const AdminUsers = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
+  const [filterDepartment, setFilterDepartment] = useState('all');
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [formData, setFormData] = useState({
@@ -36,12 +37,10 @@ const AdminUsers = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (formData.role === 'student' && !formData.matriculationNumber) {
       toast.error('Matriculation number is required for students!');
       return;
     }
-
     try {
       if (editingUser) {
         await API.put(`/users/${editingUser._id}`, formData);
@@ -85,21 +84,34 @@ const AdminUsers = () => {
   const resetForm = () => {
     setEditingUser(null);
     setFormData({
-      fullName: '',
-      email: '',
-      password: '',
-      role: 'student',
-      matriculationNumber: '',
-      department: ''
+      fullName: '', email: '', password: '',
+      role: 'student', matriculationNumber: '', department: ''
     });
   };
 
+  // Get unique departments from users
+  const departments = [...new Set(
+    users
+      .filter(u => u.department)
+      .map(u => u.department)
+  )].sort();
+
+  // Filter users
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch =
+      user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.matriculationNumber && user.matriculationNumber.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesRole = filterRole === 'all' || user.role === filterRole;
-    return matchesSearch && matchesRole;
+    const matchesDepartment = filterDepartment === 'all' || user.department === filterDepartment;
+    return matchesSearch && matchesRole && matchesDepartment;
   });
+
+  // Reset department filter when role changes to admin
+  const handleRoleFilter = (role) => {
+    setFilterRole(role);
+    if (role === 'admin') setFilterDepartment('all');
+  };
 
   if (loading) return (
     <div className="loading-spinner" style={{ height: '100vh' }}>
@@ -126,7 +138,8 @@ const AdminUsers = () => {
       {/* Filters */}
       <div className="card" style={{ marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-          {/* Search */}
+
+          {/* Search - now includes matric number */}
           <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
             <FiSearch style={{
               position: 'absolute', left: '1rem', top: '50%',
@@ -135,7 +148,7 @@ const AdminUsers = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="Search users..."
+              placeholder="Search by name, email or matric no..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{ paddingLeft: '2.75rem' }}
@@ -146,7 +159,7 @@ const AdminUsers = () => {
           <select
             className="form-control"
             value={filterRole}
-            onChange={(e) => setFilterRole(e.target.value)}
+            onChange={(e) => handleRoleFilter(e.target.value)}
             style={{ width: 'auto', minWidth: '150px' }}
           >
             <option value="all">All Roles</option>
@@ -154,12 +167,83 @@ const AdminUsers = () => {
             <option value="lecturer">Lecturers</option>
             <option value="admin">Admins</option>
           </select>
+
+          {/* Department Filter — only shows for student/lecturer */}
+          {filterRole !== 'admin' && departments.length > 0 && (
+            <select
+              className="form-control"
+              value={filterDepartment}
+              onChange={(e) => setFilterDepartment(e.target.value)}
+              style={{ width: 'auto', minWidth: '180px' }}
+            >
+              <option value="all">All Departments</option>
+              {departments.map(dept => (
+                <option key={dept} value={dept}>{dept}</option>
+              ))}
+            </select>
+          )}
         </div>
+
+        {/* Active filters summary */}
+        {(filterRole !== 'all' || filterDepartment !== 'all' || searchTerm) && (
+          <div style={{
+            marginTop: '0.75rem',
+            display: 'flex', alignItems: 'center',
+            gap: '0.5rem', flexWrap: 'wrap'
+          }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Active filters:
+            </span>
+            {filterRole !== 'all' && (
+              <span style={{
+                padding: '0.2rem 0.6rem', borderRadius: '9999px',
+                backgroundColor: 'rgba(79,70,229,0.1)', color: '#4F46E5',
+                fontSize: '0.75rem', fontWeight: '600',
+                display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer'
+              }} onClick={() => handleRoleFilter('all')}>
+                {filterRole} <FiX size={10} />
+              </span>
+            )}
+            {filterDepartment !== 'all' && (
+              <span style={{
+                padding: '0.2rem 0.6rem', borderRadius: '9999px',
+                backgroundColor: 'rgba(16,185,129,0.1)', color: '#10B981',
+                fontSize: '0.75rem', fontWeight: '600',
+                display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer'
+              }} onClick={() => setFilterDepartment('all')}>
+                {filterDepartment} <FiX size={10} />
+              </span>
+            )}
+            {searchTerm && (
+              <span style={{
+                padding: '0.2rem 0.6rem', borderRadius: '9999px',
+                backgroundColor: 'rgba(245,158,11,0.1)', color: '#F59E0B',
+                fontSize: '0.75rem', fontWeight: '600',
+                display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer'
+              }} onClick={() => setSearchTerm('')}>
+                "{searchTerm}" <FiX size={10} />
+              </span>
+            )}
+            <button
+              onClick={() => { setFilterRole('all'); setFilterDepartment('all'); setSearchTerm(''); }}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: '0.75rem', color: 'var(--text-muted)',
+                textDecoration: 'underline'
+              }}
+            >
+              Clear all
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Users Table */}
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <div style={{
+          display: 'flex', justifyContent: 'space-between',
+          alignItems: 'center', marginBottom: '1rem'
+        }}>
           <h3 style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text-primary)' }}>
             All Users ({filteredUsers.length})
           </h3>
@@ -169,6 +253,9 @@ const AdminUsers = () => {
             <div className="empty-state">
               <div className="empty-state-icon">👥</div>
               <h3>No users found</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                Try adjusting your search or filters
+              </p>
             </div>
           ) : (
             <table>
@@ -189,7 +276,11 @@ const AdminUsers = () => {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <div style={{
                           width: '36px', height: '36px', borderRadius: '50%',
-                          background: 'linear-gradient(135deg, #4F46E5, #7C3AED)',
+                          background: user.role === 'admin'
+                            ? 'linear-gradient(135deg, #EF4444, #DC2626)'
+                            : user.role === 'lecturer'
+                            ? 'linear-gradient(135deg, #F59E0B, #D97706)'
+                            : 'linear-gradient(135deg, #4F46E5, #7C3AED)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           color: 'white', fontSize: '0.875rem', flexShrink: 0
                         }}>
@@ -211,7 +302,17 @@ const AdminUsers = () => {
                       </span>
                     </td>
                     <td>{user.department || 'N/A'}</td>
-                    <td>{user.matriculationNumber || 'N/A'}</td>
+                    <td>
+                      {user.matriculationNumber ? (
+                        <span style={{
+                          fontFamily: 'monospace', fontSize: '0.8rem',
+                          backgroundColor: 'var(--bg-tertiary)',
+                          padding: '0.2rem 0.5rem', borderRadius: '4px'
+                        }}>
+                          {user.matriculationNumber}
+                        </span>
+                      ) : 'N/A'}
+                    </td>
                     <td>
                       <span className={`badge ${user.isActive ? 'badge-success' : 'badge-danger'}`}>
                         {user.isActive ? 'Active' : 'Inactive'}
@@ -253,38 +354,32 @@ const AdminUsers = () => {
                 <FiX />
               </button>
             </div>
-
             <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label className="form-label">Full Name</label>
                 <input
-                  type="text"
-                  className="form-control"
+                  type="text" className="form-control"
                   placeholder="Enter full name"
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   required
                 />
               </div>
-
               <div className="form-group">
                 <label className="form-label">Email Address</label>
                 <input
-                  type="email"
-                  className="form-control"
+                  type="email" className="form-control"
                   placeholder="Enter email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
                 />
               </div>
-
               {!editingUser && (
                 <div className="form-group">
                   <label className="form-label">Password</label>
                   <input
-                    type="password"
-                    className="form-control"
+                    type="password" className="form-control"
                     placeholder="Enter password"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -292,7 +387,6 @@ const AdminUsers = () => {
                   />
                 </div>
               )}
-
               <div className="form-group">
                 <label className="form-label">Role</label>
                 <select
@@ -305,13 +399,11 @@ const AdminUsers = () => {
                   <option value="admin">Admin</option>
                 </select>
               </div>
-
               {formData.role === 'student' && (
                 <div className="form-group">
                   <label className="form-label">Matriculation Number</label>
                   <input
-                    type="text"
-                    className="form-control"
+                    type="text" className="form-control"
                     placeholder="Enter matriculation number"
                     value={formData.matriculationNumber}
                     onChange={(e) => setFormData({ ...formData, matriculationNumber: e.target.value })}
@@ -319,24 +411,18 @@ const AdminUsers = () => {
                   />
                 </div>
               )}
-
               <div className="form-group">
                 <label className="form-label">Department</label>
                 <input
-                  type="text"
-                  className="form-control"
+                  type="text" className="form-control"
                   placeholder="Enter department"
                   value={formData.department}
                   onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                 />
               </div>
-
               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  onClick={() => setShowModal(false)}
-                >
+                <button type="button" className="btn btn-outline"
+                  onClick={() => setShowModal(false)}>
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-primary">
