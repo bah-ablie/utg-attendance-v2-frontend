@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FiBook, FiCalendar, FiUsers, FiCheckSquare } from 'react-icons/fi';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import API from '../../api/axiosConfig';
 
 const LecturerOverview = () => {
+  const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,10 +33,10 @@ const LecturerOverview = () => {
   const activeSessions = sessions.filter(s => s.isActive).length;
 
   const statCards = [
-    { title: 'My Courses', value: courses.length, icon: <FiBook />, color: '#4F46E5', bg: 'rgba(79,70,229,0.1)' },
-    { title: 'Total Students', value: totalStudents, icon: <FiUsers />, color: '#10B981', bg: 'rgba(16,185,129,0.1)' },
-    { title: 'Total Sessions', value: sessions.length, icon: <FiCalendar />, color: '#F59E0B', bg: 'rgba(245,158,11,0.1)' },
-    { title: 'Active Sessions', value: activeSessions, icon: <FiCheckSquare />, color: '#EF4444', bg: 'rgba(239,68,68,0.1)' },
+  { title: 'My Courses', value: courses.length, icon: <FiBook />, color: '#4F46E5', bg: 'rgba(79,70,229,0.1)', path: '/lecturer/courses' },
+  { title: 'Total Students', value: totalStudents, icon: <FiUsers />, color: '#10B981', bg: 'rgba(16,185,129,0.1)', path: '/lecturer/courses' },
+  { title: 'Total Sessions', value: sessions.length, icon: <FiCalendar />, color: '#F59E0B', bg: 'rgba(245,158,11,0.1)', path: '/lecturer/sessions' },
+  { title: 'Active Sessions', value: activeSessions, icon: <FiCheckSquare />, color: '#EF4444', bg: 'rgba(239,68,68,0.1)', path: '/lecturer/sessions' },
   ];
 
   const sessionChartData = courses.map(course => ({
@@ -61,7 +63,7 @@ const LecturerOverview = () => {
       {/* Stat Cards */}
       <div className="stats-grid">
         {statCards.map((card, index) => (
-          <div key={index} className="stat-card">
+          <div key={index} className="stat-card"> onClick={() => navigate(card.path)} style={{ cursor: 'pointer' }}
             <div className="stat-card-icon" style={{ backgroundColor: card.bg, color: card.color }}>
               {card.icon}
             </div>

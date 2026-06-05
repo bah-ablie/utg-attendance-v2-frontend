@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FiBook, FiCheckSquare, FiTrendingUp, FiAward } from 'react-icons/fi';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import API from '../../api/axiosConfig';
@@ -6,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const StudentOverview = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [report, setReport] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,10 +39,10 @@ const StudentOverview = () => {
   };
 
   const statCards = [
-    { title: 'Enrolled Courses', value: report.length, icon: <FiBook />, color: '#4F46E5', bg: 'rgba(79,70,229,0.1)' },
-    { title: 'Classes Attended', value: attendedClasses, icon: <FiCheckSquare />, color: '#10B981', bg: 'rgba(16,185,129,0.1)' },
-    { title: 'Total Classes', value: totalClasses, icon: <FiTrendingUp />, color: '#F59E0B', bg: 'rgba(245,158,11,0.1)' },
-    { title: 'Overall Attendance', value: `${overallPercentage}%`, icon: <FiAward />, color: getStatusColor(overallPercentage), bg: `${getStatusColor(overallPercentage)}20` },
+  { title: 'Enrolled Courses', value: report.length, icon: <FiBook />, color: '#4F46E5', bg: 'rgba(79,70,229,0.1)', path: '/student/courses' },
+  { title: 'Classes Attended', value: attendedClasses, icon: <FiCheckSquare />, color: '#10B981', bg: 'rgba(16,185,129,0.1)', path: '/student/attendance' },
+  { title: 'Total Classes', value: totalClasses, icon: <FiTrendingUp />, color: '#F59E0B', bg: 'rgba(245,158,11,0.1)', path: '/student/attendance' },
+  { title: 'Overall Attendance', value: `${overallPercentage}%`, icon: <FiAward />, color: getStatusColor(overallPercentage), bg: `${getStatusColor(overallPercentage)}20`, path: '/student/attendance' },
   ];
 
   const chartData = report.map(r => ({
@@ -68,7 +70,7 @@ const StudentOverview = () => {
       {/* Stat Cards */}
       <div className="stats-grid">
         {statCards.map((card, index) => (
-          <div key={index} className="stat-card">
+          <div key={index} className="stat-card"> onClick={() => navigate(card.path)} style={{ cursor: 'pointer' }}
             <div className="stat-card-icon" style={{ backgroundColor: card.bg, color: card.color }}>
               {card.icon}
             </div>

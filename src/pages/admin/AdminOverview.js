@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FiUsers, FiBook } from 'react-icons/fi';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import API from '../../api/axiosConfig';
 
 const AdminOverview = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalStudents: 0,
@@ -60,11 +62,11 @@ const AdminOverview = () => {
     return acc;
   }, []);
 
-  const statCards = [
-    { title: 'Total Users', value: stats.totalUsers, icon: <FiUsers />, color: '#4F46E5', bg: 'rgba(79,70,229,0.1)' },
-    { title: 'Students', value: stats.totalStudents, icon: <FiUsers />, color: '#10B981', bg: 'rgba(16,185,129,0.1)' },
-    { title: 'Lecturers', value: stats.totalLecturers, icon: <FiUsers />, color: '#F59E0B', bg: 'rgba(245,158,11,0.1)' },
-    { title: 'Courses', value: stats.totalCourses, icon: <FiBook />, color: '#EF4444', bg: 'rgba(239,68,68,0.1)' },
+ const statCards = [
+  { title: 'Total Users', value: stats.totalUsers, icon: <FiUsers />, color: '#4F46E5', bg: 'rgba(79,70,229,0.1)', path: '/admin/users' },
+  { title: 'Students', value: stats.totalStudents, icon: <FiUsers />, color: '#10B981', bg: 'rgba(16,185,129,0.1)', path: '/admin/users' },
+  { title: 'Lecturers', value: stats.totalLecturers, icon: <FiUsers />, color: '#F59E0B', bg: 'rgba(245,158,11,0.1)', path: '/admin/users' },
+  { title: 'Courses', value: stats.totalCourses, icon: <FiBook />, color: '#EF4444', bg: 'rgba(239,68,68,0.1)', path: '/admin/courses' },
   ];
 
   if (loading) return (
@@ -86,7 +88,7 @@ const AdminOverview = () => {
       {/* Stat Cards */}
       <div className="stats-grid">
         {statCards.map((card, index) => (
-          <div key={index} className="stat-card">
+          <div key={index} className="stat-card"> onClick={() => navigate(card.path)} style={{ cursor: 'pointer' }}
             <div className="stat-card-icon" style={{ backgroundColor: card.bg, color: card.color }}>
               {card.icon}
             </div>
