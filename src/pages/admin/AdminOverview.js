@@ -88,7 +88,7 @@ const AdminOverview = () => {
       {/* Stat Cards */}
       <div className="stats-grid">
         {statCards.map((card, index) => (
-          <div key={index} className="stat-card"> onClick={() => navigate(card.path)} style={{ cursor: 'pointer' }}
+          <div key={index} className="stat-card" onClick={() => navigate(card.path)} style={{ cursor: 'pointer' }}>
             <div className="stat-card-icon" style={{ backgroundColor: card.bg, color: card.color }}>
               {card.icon}
             </div>
