@@ -9,6 +9,8 @@ const AdminCourses = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchEnroll, setSearchEnroll] = useState('');
+  const [searchRemove, setSearchRemove] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
@@ -94,6 +96,7 @@ const AdminCourses = () => {
       toast.success('Student enrolled successfully!');
       setShowEnrollModal(false);
       setSelectedStudent('');
+      setSearchEnroll('');
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Error enrolling student');
@@ -137,6 +140,17 @@ const AdminCourses = () => {
     backgroundColor: enrolledBy === 'admin'
       ? 'rgba(79,70,229,0.12)' : 'rgba(16,185,129,0.12)',
     color: enrolledBy === 'admin' ? '#4F46E5' : '#10B981'
+  });
+
+  // Filter available students for enrollment
+  const availableStudents = students.filter(s => {
+    const notEnrolled = !selectedCourse?.students?.find(
+      e => e.student?._id === s._id || e.student === s._id
+    );
+    const matchesSearch =
+      s.fullName.toLowerCase().includes(searchEnroll.toLowerCase()) ||
+      (s.matriculationNumber && s.matriculationNumber.toLowerCase().includes(searchEnroll.toLowerCase()));
+    return notEnrolled && matchesSearch;
   });
 
   if (loading) return (
@@ -233,7 +247,12 @@ const AdminCourses = () => {
                   </span>
                   <button
                     className="btn btn-success btn-sm"
-                    onClick={() => { setSelectedCourse(course); setShowEnrollModal(true); }}
+                    onClick={() => {
+                      setSelectedCourse(course);
+                      setSelectedStudent('');
+                      setSearchEnroll('');
+                      setShowEnrollModal(true);
+                    }}
                   >
                     <FiPlus /> Enroll
                   </button>
@@ -250,36 +269,90 @@ const AdminCourses = () => {
                   </div>
                 )}
 
+                {/* Search to remove */}
+                {course.students?.length > 0 && (
+                  <div style={{ position: 'relative', marginBottom: '0.5rem' }}>
+                    <FiSearch style={{
+                      position: 'absolute', left: '0.75rem', top: '50%',
+                      transform: 'translateY(-50%)', color: 'var(--text-muted)',
+                      fontSize: '0.8rem'
+                    }} />
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Search to remove..."
+                      value={searchRemove[course._id] || ''}
+                      onChange={(e) => setSearchRemove(prev => ({
+                        ...prev, [course._id]: e.target.value
+                      }))}
+                      style={{
+                        paddingLeft: '2.25rem',
+                        fontSize: '0.8rem',
+                        padding: '0.4rem 0.75rem 0.4rem 2.25rem'
+                      }}
+                    />
+                  </div>
+                )}
+
                 {course.students?.length > 0 ? (
                   <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
-                    {course.students.map((enrollment) => {
-                      // Handle both old format (ObjectId) and new format ({student, enrolledBy})
-                      const studentData = enrollment.student || enrollment;
-                      const enrolledBy = enrollment.enrolledBy || 'admin';
-                      return (
-                        <div key={enrollment._id || enrollment} style={{
-                          display: 'flex', justifyContent: 'space-between',
-                          alignItems: 'center', padding: '0.4rem 0',
-                          borderBottom: '1px solid var(--border-color)'
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                              {studentData?.fullName || 'Unknown Student'}
-                            </span>
-                            <span style={enrollBadge(enrolledBy)}>
-                              {enrolledBy === 'admin' ? 'Admin' : 'Lecturer'}
-                            </span>
+                    {course.students
+                      .filter(enrollment => {
+                        const studentData = enrollment.student || enrollment;
+                        const search = searchRemove[course._id] || '';
+                        if (!search) return true;
+                        return (
+                          studentData?.fullName?.toLowerCase().includes(search.toLowerCase()) ||
+                          studentData?.matriculationNumber?.toLowerCase().includes(search.toLowerCase())
+                        );
+                      })
+                      .map((enrollment) => {
+                        const studentData = enrollment.student || enrollment;
+                        const enrolledBy = enrollment.enrolledBy || 'admin';
+                        return (
+                          <div key={enrollment._id || enrollment} style={{
+                            display: 'flex', justifyContent: 'space-between',
+                            alignItems: 'center', padding: '0.4rem 0',
+                            borderBottom: '1px solid var(--border-color)'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                              <div>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                  {studentData?.fullName || 'Unknown Student'}
+                                </span>
+                                <span style={enrollBadge(enrolledBy)}>
+                                  {enrolledBy === 'admin' ? 'Admin' : 'Lecturer'}
+                                </span>
+                                {studentData?.matriculationNumber && (
+                                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                    {studentData.matriculationNumber}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <button
+                              className="btn btn-danger btn-sm"
+                              onClick={() => handleUnenroll(course._id, studentData?._id || studentData)}
+                              style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem', flexShrink: 0 }}
+                            >
+                              Remove
+                            </button>
                           </div>
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => handleUnenroll(course._id, studentData?._id || studentData)}
-                            style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem' }}
-                          >
-                            Remove
-                          </button>
-                        </div>
+                        );
+                      })}
+                    {course.students.filter(enrollment => {
+                      const studentData = enrollment.student || enrollment;
+                      const search = searchRemove[course._id] || '';
+                      if (!search) return true;
+                      return (
+                        studentData?.fullName?.toLowerCase().includes(search.toLowerCase()) ||
+                        studentData?.matriculationNumber?.toLowerCase().includes(search.toLowerCase())
                       );
-                    })}
+                    }).length === 0 && (
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '0.5rem' }}>
+                        No students match your search
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' }}>
@@ -416,27 +489,74 @@ const AdminCourses = () => {
             <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem', fontSize: '0.875rem' }}>
               Enrolling in: <strong>{selectedCourse?.courseName}</strong>
             </p>
+
+            {/* Search */}
+            <div className="form-group">
+              <label className="form-label">Search Student</label>
+              <div style={{ position: 'relative' }}>
+                <FiSearch style={{
+                  position: 'absolute', left: '1rem', top: '50%',
+                  transform: 'translateY(-50%)', color: 'var(--text-muted)'
+                }} />
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Search by name or matric number..."
+                  value={searchEnroll}
+                  onChange={(e) => setSearchEnroll(e.target.value)}
+                  style={{ paddingLeft: '2.75rem' }}
+                />
+              </div>
+            </div>
+
+            {/* Student List */}
             <div className="form-group">
               <label className="form-label">Select Student</label>
-              <select
-                className="form-control"
-                value={selectedStudent}
-                onChange={(e) => setSelectedStudent(e.target.value)}
-              >
-                <option value="">Choose a student...</option>
-                {students
-                  .filter(s => !selectedCourse?.students?.find(
-                    e => e.student?._id === s._id || e.student === s._id
+              <div style={{
+                maxHeight: '200px', overflowY: 'auto',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-md)'
+              }}>
+                {availableStudents.length === 0 ? (
+                  <p style={{
+                    padding: '1rem', textAlign: 'center',
+                    color: 'var(--text-muted)', fontSize: '0.875rem'
+                  }}>
+                    No available students found
+                  </p>
+                ) : (
+                  availableStudents.map(s => (
+                    <div
+                      key={s._id}
+                      onClick={() => setSelectedStudent(s._id)}
+                      style={{
+                        padding: '0.625rem 1rem', cursor: 'pointer',
+                        backgroundColor: selectedStudent === s._id
+                          ? 'rgba(79,70,229,0.1)' : 'transparent',
+                        borderLeft: selectedStudent === s._id
+                          ? '3px solid #4F46E5' : '3px solid transparent',
+                        borderBottom: '1px solid var(--border-color)',
+                        transition: 'all 0.15s'
+                      }}
+                    >
+                      <div style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-primary)' }}>
+                        {s.fullName}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        {s.matriculationNumber || 'No matric number'}
+                      </div>
+                    </div>
                   ))
-                  .map((s) => (
-                    <option key={s._id} value={s._id}>
-                      {s.fullName} — {s.matriculationNumber || 'No matric'}
-                    </option>
-                  ))}
-              </select>
+                )}
+              </div>
             </div>
+
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-              <button className="btn btn-outline" onClick={() => setShowEnrollModal(false)}>
+              <button className="btn btn-outline" onClick={() => {
+                setShowEnrollModal(false);
+                setSelectedStudent('');
+                setSearchEnroll('');
+              }}>
                 Cancel
               </button>
               <button className="btn btn-success" onClick={handleEnroll}>
