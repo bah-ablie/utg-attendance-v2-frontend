@@ -252,29 +252,34 @@ const AdminCourses = () => {
 
                 {course.students?.length > 0 ? (
                   <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
-                    {course.students.map((enrollment) => (
-                      <div key={enrollment._id} style={{
-                        display: 'flex', justifyContent: 'space-between',
-                        alignItems: 'center', padding: '0.4rem 0',
-                        borderBottom: '1px solid var(--border-color)'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                            {enrollment.student?.fullName}
-                          </span>
-                          <span style={enrollBadge(enrollment.enrolledBy)}>
-                            {enrollment.enrolledBy === 'admin' ? 'Admin' : 'Lecturer'}
-                          </span>
+                    {course.students.map((enrollment) => {
+                      // Handle both old format (ObjectId) and new format ({student, enrolledBy})
+                      const studentData = enrollment.student || enrollment;
+                      const enrolledBy = enrollment.enrolledBy || 'admin';
+                      return (
+                        <div key={enrollment._id || enrollment} style={{
+                          display: 'flex', justifyContent: 'space-between',
+                          alignItems: 'center', padding: '0.4rem 0',
+                          borderBottom: '1px solid var(--border-color)'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                              {studentData?.fullName || 'Unknown Student'}
+                            </span>
+                            <span style={enrollBadge(enrolledBy)}>
+                              {enrolledBy === 'admin' ? 'Admin' : 'Lecturer'}
+                            </span>
+                          </div>
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleUnenroll(course._id, studentData?._id || studentData)}
+                            style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem' }}
+                          >
+                            Remove
+                          </button>
                         </div>
-                        <button
-                          className="btn btn-danger btn-sm"
-                          onClick={() => handleUnenroll(course._id, enrollment.student?._id)}
-                          style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem' }}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' }}>

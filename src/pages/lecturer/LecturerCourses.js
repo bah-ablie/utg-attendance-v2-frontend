@@ -205,52 +205,55 @@ const fetchData = async () => {
 
                 {course.students?.length > 0 ? (
                   <div style={{ maxHeight: '150px', overflowY: 'auto' }}>
-                    {course.students.map((enrollment) => (
-                      <div key={enrollment._id} style={{
+                    {course.students.map((enrollment) => {
+                     const studentData = enrollment.student || enrollment;
+                     const enrolledBy = enrollment.enrolledBy || 'admin';
+                     return (
+                      <div key={enrollment._id || enrollment} style={{
                         display: 'flex', alignItems: 'center',
                         justifyContent: 'space-between',
                         gap: '0.5rem', padding: '0.375rem 0',
                         borderBottom: '1px solid var(--border-color)'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <div style={{
-                            width: '28px', height: '28px', borderRadius: '50%',
-                            background: enrollment.enrolledBy === 'admin'
-                              ? 'linear-gradient(135deg, #4F46E5, #7C3AED)'
-                              : 'linear-gradient(135deg, #10B981, #059669)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: 'white', fontSize: '0.75rem', flexShrink: 0
-                          }}>
-                            {enrollment.student?.fullName?.charAt(0)}
-                          </div>
-                          <div>
-                            <div style={{
-                              fontSize: '0.8rem', fontWeight: '500',
-                              color: 'var(--text-primary)',
-                              display: 'flex', alignItems: 'center', gap: '0.25rem'
-                            }}>
-                              {enrollment.student?.fullName}
-                              <span style={enrollBadge(enrollment.enrolledBy)}>
-                                {enrollment.enrolledBy === 'admin' ? 'Admin' : 'You'}
-                              </span>
-                            </div>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                              {enrollment.student?.matriculationNumber}
-                            </div>
-                          </div>
-                        </div>
-                        {/* Only allow unenrolling students they enrolled */}
-                        {enrollment.enrolledBy === 'lecturer' && (
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => handleUnenroll(course._id, enrollment.student?._id)}
-                            style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem', flexShrink: 0 }}
-                          >
-                            Remove
-                          </button>
-                        )}
-                      </div>
-                    ))}
+                         <div style={{
+                           width: '28px', height: '28px', borderRadius: '50%',
+                           background: enrolledBy === 'admin'
+                             ? 'linear-gradient(135deg, #4F46E5, #7C3AED)'
+                             : 'linear-gradient(135deg, #10B981, #059669)',
+                           display: 'flex', alignItems: 'center', justifyContent: 'center',
+                           color: 'white', fontSize: '0.75rem', flexShrink: 0
+                         }}>
+                           {studentData?.fullName?.charAt(0) || '?'}
+                         </div>
+                         <div>
+                           <div style={{
+                             fontSize: '0.8rem', fontWeight: '500',
+                             color: 'var(--text-primary)',
+                             display: 'flex', alignItems: 'center', gap: '0.25rem'
+                           }}>
+                             {studentData?.fullName || 'Unknown Student'}
+                             <span style={enrollBadge(enrolledBy)}>
+                              {enrolledBy === 'admin' ? 'Admin' : 'You'}
+                             </span>
+                           </div>
+                           <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                             {studentData?.matriculationNumber || ''}
+                           </div>
+                         </div>
+                       </div>
+                       {enrolledBy === 'lecturer' && (
+                         <button
+                           className="btn btn-danger btn-sm"
+                           onClick={() => handleUnenroll(course._id, studentData?._id || studentData)}
+                           style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem', flexShrink: 0 }}
+                         >
+                           Remove
+                         </button>
+                       )}
+                     </div>
+                   );
+                 })}
                   </div>
                 ) : (
                   <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' }}>
