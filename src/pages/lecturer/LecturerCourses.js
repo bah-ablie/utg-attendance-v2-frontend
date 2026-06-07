@@ -14,14 +14,14 @@ const LecturerCourses = () => {
 
   useEffect(() => { fetchData(); }, []);
 
-  const fetchData = async () => {
+const fetchData = async () => {
     try {
       const [coursesRes, usersRes] = await Promise.all([
         API.get('/courses/my-courses/lecturer'),
-        API.get('/users')
+        API.get('/users/students')
       ]);
       setCourses(coursesRes.data);
-      setStudents(usersRes.data.filter(u => u.role === 'student'));
+      setStudents(usersRes.data);
     } catch (error) {
       toast.error('Error fetching data');
     } finally {
