@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiX, FiUser } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiX, FiUser, FiEye, FiEyeOff } from 'react-icons/fi';
 import API from '../../api/axiosConfig';
 import toast from 'react-hot-toast';
 
 const AdminUsers = () => {
+  const [showPassword, setShowPassword] = useState(false);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -83,6 +84,7 @@ const AdminUsers = () => {
 
   const resetForm = () => {
     setEditingUser(null);
+    setShowPassword(false);
     setFormData({
       fullName: '', email: '', password: '',
       role: 'student', matriculationNumber: '', department: ''
@@ -378,13 +380,29 @@ const AdminUsers = () => {
               {!editingUser && (
                 <div className="form-group">
                   <label className="form-label">Password</label>
-                  <input
-                    type="password" className="form-control"
-                    placeholder="Enter password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    required
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      className="form-control"
+                      placeholder="Enter password"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      required
+                      style={{ paddingRight: '2.75rem' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={{
+                        position: 'absolute', right: '0.75rem', top: '50%',
+                        transform: 'translateY(-50%)', background: 'none',
+                        border: 'none', cursor: 'pointer', color: 'var(--text-muted)',
+                        display: 'flex', alignItems: 'center'
+                      }}
+                    >
+                      {showPassword ? <FiEyeOff /> : <FiEye />}
+                    </button>
+                  </div>
                 </div>
               )}
               <div className="form-group">
