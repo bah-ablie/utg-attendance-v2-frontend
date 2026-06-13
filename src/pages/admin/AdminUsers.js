@@ -38,6 +38,7 @@ const AdminUsers = () => {
 
  const handleSubmit = async (e) => {
   e.preventDefault();
+  console.log('Form submitted!', formData);
   if (formData.role === 'student' && !formData.matriculationNumber) {
     toast.error('Matriculation number is required for students!');
     return;
@@ -47,13 +48,18 @@ const AdminUsers = () => {
       await API.put(`/users/${editingUser._id}`, formData);
       toast.success('User updated successfully!');
     } else {
+      console.log('Creating new user...');
       await API.post('/auth/register', formData);
+      console.log('User created successfully!');
       toast.success('User registered successfully!');
     }
+    console.log('Closing modal and resetting form...');
     setShowModal(false);
     resetForm();
     await fetchUsers();
+    console.log('Done!');
   } catch (error) {
+    console.log('Error caught:', error.response?.data?.message);
     toast.error(error.response?.data?.message || 'Error saving user');
   }
 };
