@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiDownload, FiBarChart2 } from 'react-icons/fi';
+import { FiDownload, FiBarChart2, FiSearch, FiX, FiChevronDown } from 'react-icons/fi';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import API from '../../api/axiosConfig';
 import toast from 'react-hot-toast';
@@ -12,8 +12,23 @@ const AdminReports = () => {
   const [loading, setLoading] = useState(false);
   const [coursesLoading, setCoursesLoading] = useState(true);
 
+  // Course picker state
+  const [showCoursePicker, setShowCoursePicker] = useState(false);
+  const [courseSearch, setCourseSearch] = useState('');
+  const [filterDept, setFilterDept] = useState('all');
+
   useEffect(() => {
     fetchCourses();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('.course-picker-container')) {
+        setShowCoursePicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const fetchCourses = async () => {
@@ -77,6 +92,20 @@ const AdminReports = () => {
     total: item.totalSessions
   })) || [];
 
+  // Unique departments from courses
+  const departments = [...new Set(courses.map(c => c.department))].sort();
+
+  // Filter courses for the picker
+  const filteredCourseOptions = courses.filter(course => {
+    const matchesSearch =
+      course.courseName.toLowerCase().includes(courseSearch.toLowerCase()) ||
+      course.courseCode.toLowerCase().includes(courseSearch.toLowerCase());
+    const matchesDept = filterDept === 'all' || course.department === filterDept;
+    return matchesSearch && matchesDept;
+  });
+
+  const selectedCourseData = courses.find(c => c._id === selectedCourse);
+
   if (coursesLoading) return (
     <div className="loading-spinner" style={{ height: '100vh' }}>
       <div className="spinner"></div>
@@ -104,19 +133,140 @@ const AdminReports = () => {
           Select Course
         </h3>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-          <select
-            className="form-control"
-            value={selectedCourse}
-            onChange={(e) => setSelectedCourse(e.target.value)}
-            style={{ flex: 1, minWidth: '200px' }}
-          >
-            <option value="">Choose a course...</option>
-            {courses.map((course) => (
-              <option key={course._id} value={course._id}>
-                {course.courseName} ({course.courseCode})
-              </option>
-            ))}
-          </select>
+
+          {/* Searchable Course Picker */}
+          <div className="course-picker-container" style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
+            <div
+              onClick={() => setShowCoursePicker(!showCoursePicker)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '0.625rem 1rem',
+                borderRadius: 'var(--radius-md)',
+                border: `1px solid ${showCoursePicker ? 'var(--primary)' : 'var(--border-color)'}`,
+                backgroundColor: 'var(--bg-secondary)',
+                cursor: 'pointer',
+                boxShadow: showCoursePicker ? '0 0 0 3px rgba(79,70,229,0.1)' : 'none',
+                minHeight: '42px'
+              }}
+            >
+              <span style={{
+                fontSize: '0.875rem',
+                color: selectedCourseData ? 'var(--text-primary)' : 'var(--text-muted)',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+              }}>
+                {selectedCourseData
+                  ? `${selectedCourseData.courseName} (${selectedCourseData.courseCode})`
+                  : 'Choose a course...'}
+              </span>
+              <FiChevronDown style={{
+                color: 'var(--text-muted)', flexShrink: 0,
+                transform: showCoursePicker ? 'rotate(180deg)' : 'rotate(0)',
+                transition: 'transform 0.2s ease'
+              }} />
+            </div>
+
+            {/* Dropdown */}
+            {showCoursePicker && (
+              <div style={{
+                position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
+                backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-md)', boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                zIndex: 1000, overflow: 'hidden'
+              }}>
+                {/* Search */}
+                <div style={{
+                  padding: '0.5rem', borderBottom: '1px solid var(--border-color)',
+                  display: 'flex', alignItems: 'center', gap: '0.5rem',
+                  backgroundColor: 'var(--bg-tertiary)'
+                }}>
+                  <FiSearch style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                  <input
+                    autoFocus
+                    type="text"
+                    placeholder="Search by name or code..."
+                    value={courseSearch}
+                    onChange={(e) => setCourseSearch(e.target.value)}
+                    style={{
+                      border: 'none', outline: 'none', background: 'transparent',
+                      fontSize: '0.875rem', color: 'var(--text-primary)', width: '100%'
+                    }}
+                  />
+                  {courseSearch && (
+                    <FiX onClick={() => setCourseSearch('')} style={{ color: 'var(--text-muted)', cursor: 'pointer', flexShrink: 0 }} />
+                  )}
+                </div>
+
+                {/* Department Filter */}
+                {departments.length > 0 && (
+                  <div style={{
+                    padding: '0.5rem', borderBottom: '1px solid var(--border-color)',
+                    display: 'flex', gap: '0.4rem', flexWrap: 'wrap',
+                    backgroundColor: 'var(--bg-tertiary)'
+                  }}>
+                    <button
+                      onClick={() => setFilterDept('all')}
+                      style={{
+                        padding: '0.25rem 0.7rem', borderRadius: '9999px', border: 'none',
+                        cursor: 'pointer', fontSize: '0.7rem', fontWeight: '600',
+                        backgroundColor: filterDept === 'all' ? '#4F46E5' : 'var(--bg-secondary)',
+                        color: filterDept === 'all' ? 'white' : 'var(--text-secondary)'
+                      }}
+                    >
+                      All
+                    </button>
+                    {departments.map(dept => (
+                      <button
+                        key={dept}
+                        onClick={() => setFilterDept(dept)}
+                        style={{
+                          padding: '0.25rem 0.7rem', borderRadius: '9999px', border: 'none',
+                          cursor: 'pointer', fontSize: '0.7rem', fontWeight: '600',
+                          backgroundColor: filterDept === dept ? '#4F46E5' : 'var(--bg-secondary)',
+                          color: filterDept === dept ? 'white' : 'var(--text-secondary)'
+                        }}
+                      >
+                        {dept}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Options */}
+                <div style={{ maxHeight: '240px', overflowY: 'auto' }}>
+                  {filteredCourseOptions.length === 0 ? (
+                    <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                      No courses found
+                    </div>
+                  ) : (
+                    filteredCourseOptions.map(course => (
+                      <div
+                        key={course._id}
+                        onClick={() => {
+                          setSelectedCourse(course._id);
+                          setShowCoursePicker(false);
+                          setCourseSearch('');
+                        }}
+                        style={{
+                          padding: '0.625rem 1rem', cursor: 'pointer', fontSize: '0.875rem',
+                          backgroundColor: selectedCourse === course._id ? 'rgba(79,70,229,0.1)' : 'transparent',
+                          borderLeft: selectedCourse === course._id ? '3px solid #4F46E5' : '3px solid transparent',
+                          transition: 'all 0.1s ease'
+                        }}
+                      >
+                        <div style={{ fontWeight: '500', color: 'var(--text-primary)' }}>
+                          {course.courseName} ({course.courseCode})
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          {course.department}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           <button
             className="btn btn-primary"
             onClick={fetchReport}
