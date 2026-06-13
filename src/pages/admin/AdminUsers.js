@@ -36,27 +36,27 @@ const AdminUsers = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (formData.role === 'student' && !formData.matriculationNumber) {
-      toast.error('Matriculation number is required for students!');
-      return;
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (formData.role === 'student' && !formData.matriculationNumber) {
+    toast.error('Matriculation number is required for students!');
+    return;
+  }
+  try {
+    if (editingUser) {
+      await API.put(`/users/${editingUser._id}`, formData);
+      toast.success('User updated successfully!');
+    } else {
+      await API.post('/auth/register', formData);
+      toast.success('User registered successfully!');
     }
-    try {
-      if (editingUser) {
-        await API.put(`/users/${editingUser._id}`, formData);
-        toast.success('User updated successfully!');
-      } else {
-        await API.post('/auth/register', formData);
-        toast.success('User registered successfully!');
-      }
-      setShowModal(false);
-      resetForm();
-      fetchUsers();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Error saving user');
-    }
-  };
+    setShowModal(false);
+    resetForm();
+    await fetchUsers();
+  } catch (error) {
+    toast.error(error.response?.data?.message || 'Error saving user');
+  }
+};
 
   const handleEdit = (user) => {
     setEditingUser(user);
