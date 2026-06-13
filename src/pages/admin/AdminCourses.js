@@ -8,6 +8,7 @@ const AdminCourses = () => {
   const [lecturers, setLecturers] = useState([]);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCourseDept, setFilterCourseDept] = useState('all');
   const [searchEnroll, setSearchEnroll] = useState('');
@@ -43,6 +44,7 @@ const AdminCourses = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     try {
       if (editingCourse) {
         await API.put(`/courses/${editingCourse._id}`, formData);
@@ -53,9 +55,11 @@ const AdminCourses = () => {
       }
       setShowModal(false);
       resetForm();
-      fetchData();
+      await fetchData();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Error saving course');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -86,23 +90,26 @@ const AdminCourses = () => {
   };
 
   const handleEnroll = async () => {
-  if (!selectedStudent) {
-    toast.error('Please select a student!');
-    return;
-  }
-  try {
-    await API.put(`/courses/${selectedCourse._id}/enroll`, {
-      studentId: selectedStudent
-    });
-    toast.success('Student enrolled successfully!');
-    setShowEnrollModal(false);
-    setSelectedStudent('');
-    setSearchEnroll('');
-    await fetchData();
-  } catch (error) {
-    toast.error(error.response?.data?.message || 'Error enrolling student');
-  }
-};
+    if (!selectedStudent) {
+      toast.error('Please select a student!');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await API.put(`/courses/${selectedCourse._id}/enroll`, {
+        studentId: selectedStudent
+      });
+      toast.success('Student enrolled successfully!');
+      setShowEnrollModal(false);
+      setSelectedStudent('');
+      setSearchEnroll('');
+      await fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error enrolling student');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleUnenroll = async (courseId, studentId) => {
     if (!window.confirm('Are you sure you want to unenroll this student?')) return;
@@ -488,11 +495,11 @@ const AdminCourses = () => {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                <button type="button" className="btn btn-outline" onClick={() => setShowModal(false)}>
+                <button type="button" className="btn btn-outline" onClick={() => setShowModal(false)} disabled={submitting}>
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  {editingCourse ? 'Update Course' : 'Create Course'}
+                <button type="submit" className="btn btn-primary" disabled={submitting}>
+                  {submitting ? 'Saving...' : (editingCourse ? 'Update Course' : 'Create Course')}
                 </button>
               </div>
             </form>
@@ -576,15 +583,15 @@ const AdminCourses = () => {
             </div>
 
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-              <button className="btn btn-outline" onClick={() => {
+              <button className="btn btn-outline" disabled={submitting} onClick={() => {
                 setShowEnrollModal(false);
                 setSelectedStudent('');
                 setSearchEnroll('');
               }}>
                 Cancel
               </button>
-              <button className="btn btn-success" onClick={handleEnroll}>
-                Enroll Student
+              <button className="btn btn-success" onClick={handleEnroll} disabled={submitting}>
+                {submitting ? 'Enrolling...' : 'Enroll Student'}
               </button>
             </div>
           </div>

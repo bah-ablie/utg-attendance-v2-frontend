@@ -7,6 +7,7 @@ const AdminUsers = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
   const [filterDepartment, setFilterDepartment] = useState('all');
@@ -36,33 +37,30 @@ const AdminUsers = () => {
     }
   };
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  console.log('Form submitted!', formData);
-  if (formData.role === 'student' && !formData.matriculationNumber) {
-    toast.error('Matriculation number is required for students!');
-    return;
-  }
-  try {
-    if (editingUser) {
-      await API.put(`/users/${editingUser._id}`, formData);
-      toast.success('User updated successfully!');
-    } else {
-      console.log('Creating new user...');
-      await API.post('/auth/register', formData);
-      console.log('User created successfully!');
-      toast.success('User registered successfully!');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (formData.role === 'student' && !formData.matriculationNumber) {
+      toast.error('Matriculation number is required for students!');
+      return;
     }
-    console.log('Closing modal and resetting form...');
-    setShowModal(false);
-    resetForm();
-    await fetchUsers();
-    console.log('Done!');
-  } catch (error) {
-    console.log('Error caught:', error.response?.data?.message);
-    toast.error(error.response?.data?.message || 'Error saving user');
-  }
-};
+    setSubmitting(true);
+    try {
+      if (editingUser) {
+        await API.put(`/users/${editingUser._id}`, formData);
+        toast.success('User updated successfully!');
+      } else {
+        await API.post('/auth/register', formData);
+        toast.success('User registered successfully!');
+      }
+      setShowModal(false);
+      resetForm();
+      await fetchUsers();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error saving user');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleEdit = (user) => {
     setEditingUser(user);
@@ -446,11 +444,11 @@ const AdminUsers = () => {
               </div>
               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
                 <button type="button" className="btn btn-outline"
-                  onClick={() => setShowModal(false)}>
+                  onClick={() => setShowModal(false)} disabled={submitting}>
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  {editingUser ? 'Update User' : 'Add User'}
+                <button type="submit" className="btn btn-primary" disabled={submitting}>
+                  {submitting ? 'Saving...' : (editingUser ? 'Update User' : 'Add User')}
                 </button>
               </div>
             </form>
