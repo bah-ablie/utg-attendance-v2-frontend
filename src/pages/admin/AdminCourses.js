@@ -90,26 +90,26 @@ const AdminCourses = () => {
   };
 
   const handleEnroll = async () => {
-    if (!selectedStudent) {
-      toast.error('Please select a student!');
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await API.put(`/courses/${selectedCourse._id}/enroll`, {
-        studentId: selectedStudent
-      });
-      toast.success('Student enrolled successfully!');
-      setShowEnrollModal(false);
-      setSelectedStudent('');
-      setSearchEnroll('');
-      await fetchData();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Error enrolling student');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  if (!selectedStudent) {
+    toast.error('Please select a student!');
+    return;
+  }
+  setSubmitting(true);
+  try {
+    await API.put(`/courses/${selectedCourse._id}/enroll`, {
+      studentId: selectedStudent
+    });
+    toast.success('Student enrolled successfully!');
+    setShowEnrollModal(false);
+    setSelectedStudent('');
+    setSearchEnroll('');
+    setSubmitting(false);
+    fetchData();
+  } catch (error) {
+    toast.error(error.response?.data?.message || 'Error enrolling student');
+    setSubmitting(false);
+  }
+};
 
   const handleUnenroll = async (courseId, studentId) => {
     if (!window.confirm('Are you sure you want to unenroll this student?')) return;
