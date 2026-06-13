@@ -9,6 +9,7 @@ const AdminCourses = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterCourseDept, setFilterCourseDept] = useState('all');
   const [searchEnroll, setSearchEnroll] = useState('');
   const [searchRemove, setSearchRemove] = useState({});
   const [showModal, setShowModal] = useState(false);
@@ -123,10 +124,16 @@ const AdminCourses = () => {
     });
   };
 
-  const filteredCourses = courses.filter(course =>
-    course.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    course.courseCode.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Get unique departments from courses
+  const courseDepartments = [...new Set(courses.map(c => c.department))].sort();
+
+  const filteredCourses = courses.filter(course => {
+    const matchesSearch =
+      course.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      course.courseCode.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDept = filterCourseDept === 'all' || course.department === filterCourseDept;
+    return matchesSearch && matchesDept;
+  });
 
   // Enrollment badge style
   const enrollBadge = (enrolledBy) => ({
@@ -175,21 +182,38 @@ const AdminCourses = () => {
         </button>
       </div>
 
-      {/* Search */}
+      {/* Search & Filter */}
       <div className="card" style={{ marginBottom: '1.5rem' }}>
-        <div style={{ position: 'relative' }}>
-          <FiSearch style={{
-            position: 'absolute', left: '1rem', top: '50%',
-            transform: 'translateY(-50%)', color: 'var(--text-muted)'
-          }} />
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Search by course name or code..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ paddingLeft: '2.75rem' }}
-          />
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
+            <FiSearch style={{
+              position: 'absolute', left: '1rem', top: '50%',
+              transform: 'translateY(-50%)', color: 'var(--text-muted)'
+            }} />
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Search by course name or code..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ paddingLeft: '2.75rem' }}
+            />
+          </div>
+
+          {/* Department Filter */}
+          {courseDepartments.length > 0 && (
+            <select
+              className="form-control"
+              value={filterCourseDept}
+              onChange={(e) => setFilterCourseDept(e.target.value)}
+              style={{ width: 'auto', minWidth: '180px' }}
+            >
+              <option value="all">All Departments</option>
+              {courseDepartments.map(dept => (
+                <option key={dept} value={dept}>{dept}</option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 
