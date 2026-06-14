@@ -95,14 +95,10 @@ const AdminUsers = () => {
     });
   };
 
-  // Get unique departments from users
   const departments = [...new Set(
-    users
-      .filter(u => u.department)
-      .map(u => u.department)
+    users.filter(u => u.department).map(u => u.department)
   )].sort();
 
-  // Filter users
   const filteredUsers = users.filter(user => {
     const matchesSearch =
       user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -113,7 +109,6 @@ const AdminUsers = () => {
     return matchesSearch && matchesRole && matchesDepartment;
   });
 
-  // Reset department filter when role changes to admin
   const handleRoleFilter = (role) => {
     setFilterRole(role);
     if (role === 'admin') setFilterDepartment('all');
@@ -144,8 +139,6 @@ const AdminUsers = () => {
       {/* Filters */}
       <div className="card" style={{ marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-
-          {/* Search - now includes matric number */}
           <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
             <FiSearch style={{
               position: 'absolute', left: '1rem', top: '50%',
@@ -161,7 +154,6 @@ const AdminUsers = () => {
             />
           </div>
 
-          {/* Role Filter */}
           <select
             className="form-control"
             value={filterRole}
@@ -174,7 +166,6 @@ const AdminUsers = () => {
             <option value="admin">Admins</option>
           </select>
 
-          {/* Department Filter — only shows for student/lecturer */}
           {filterRole !== 'admin' && departments.length > 0 && (
             <select
               className="form-control"
@@ -190,7 +181,6 @@ const AdminUsers = () => {
           )}
         </div>
 
-        {/* Active filters summary */}
         {(filterRole !== 'all' || filterDepartment !== 'all' || searchTerm) && (
           <div style={{
             marginTop: '0.75rem',
@@ -360,7 +350,7 @@ const AdminUsers = () => {
                 <FiX />
               </button>
             </div>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} autoComplete="off">
               <div className="form-group">
                 <label className="form-label">Full Name</label>
                 <input
@@ -368,6 +358,7 @@ const AdminUsers = () => {
                   placeholder="Enter full name"
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  autoComplete="off"
                   required
                 />
               </div>
@@ -378,6 +369,7 @@ const AdminUsers = () => {
                   placeholder="Enter email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  autoComplete="off"
                   required
                 />
               </div>
@@ -391,6 +383,7 @@ const AdminUsers = () => {
                       placeholder="Enter password"
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      autoComplete="new-password"
                       required
                       style={{ paddingRight: '2.75rem' }}
                     />
@@ -429,6 +422,7 @@ const AdminUsers = () => {
                     placeholder="Enter matriculation number"
                     value={formData.matriculationNumber}
                     onChange={(e) => setFormData({ ...formData, matriculationNumber: e.target.value })}
+                    autoComplete="off"
                     required
                   />
                 </div>
@@ -440,6 +434,7 @@ const AdminUsers = () => {
                   placeholder="Enter department"
                   value={formData.department}
                   onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                  autoComplete="off"
                 />
               </div>
               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
