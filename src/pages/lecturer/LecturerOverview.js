@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiBook, FiCalendar, FiUsers, FiCheckSquare } from 'react-icons/fi';
+import { FiBook, FiCalendar, FiUsers, FiCheckSquare, FiAlertTriangle } from 'react-icons/fi';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import API from '../../api/axiosConfig';
 
@@ -8,6 +8,7 @@ const LecturerOverview = () => {
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [sessions, setSessions] = useState([]);
+  const [atRiskData, setAtRiskData] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,6 +23,38 @@ const LecturerOverview = () => {
       ]);
       setCourses(coursesRes.data);
       setSessions(sessionsRes.data);
+
+      // Fetch attendance reports for each course to find at-risk students
+      const reports = await Promise.all(
+        coursesRes.data.map(course =>
+          API.get(`/attendance/report/${course._id}`)
+            .then(res => ({ course, report: res.data }))
+            .catch(() => null)
+        )
+      );
+
+      // Collect at-risk students (below 75%) across all courses
+      const atRisk = [];
+      reports.forEach(item => {
+        if (!item) return;
+        item.report.report.forEach(student => {
+          if (student.percentage < 75) {
+            atRisk.push({
+              studentName: student.student.fullName,
+              matricNumber: student.student.matriculationNumber,
+              courseName: item.course.courseName,
+              courseCode: item.course.courseCode,
+              percentage: student.percentage,
+              status: student.status
+            });
+          }
+        });
+      });
+
+      // Sort by percentage ascending (worst first)
+      atRisk.sort((a, b) => a.percentage - b.percentage);
+      setAtRiskData(atRisk);
+
     } catch (error) {
       console.log('Error fetching data:', error);
     } finally {
@@ -33,10 +66,10 @@ const LecturerOverview = () => {
   const activeSessions = sessions.filter(s => s.isActive).length;
 
   const statCards = [
-  { title: 'My Courses', value: courses.length, icon: <FiBook />, color: '#4F46E5', bg: 'rgba(79,70,229,0.1)', path: '/lecturer/courses' },
-  { title: 'Total Students', value: totalStudents, icon: <FiUsers />, color: '#10B981', bg: 'rgba(16,185,129,0.1)', path: '/lecturer/courses' },
-  { title: 'Total Sessions', value: sessions.length, icon: <FiCalendar />, color: '#F59E0B', bg: 'rgba(245,158,11,0.1)', path: '/lecturer/sessions' },
-  { title: 'Active Sessions', value: activeSessions, icon: <FiCheckSquare />, color: '#EF4444', bg: 'rgba(239,68,68,0.1)', path: '/lecturer/sessions' },
+    { title: 'My Courses', value: courses.length, icon: <FiBook />, color: '#4F46E5', bg: 'rgba(79,70,229,0.1)', path: '/lecturer/courses' },
+    { title: 'Total Students', value: totalStudents, icon: <FiUsers />, color: '#10B981', bg: 'rgba(16,185,129,0.1)', path: '/lecturer/courses' },
+    { title: 'Total Sessions', value: sessions.length, icon: <FiCalendar />, color: '#F59E0B', bg: 'rgba(245,158,11,0.1)', path: '/lecturer/sessions' },
+    { title: 'Active Sessions', value: activeSessions, icon: <FiCheckSquare />, color: '#EF4444', bg: 'rgba(239,68,68,0.1)', path: '/lecturer/sessions' },
   ];
 
   const sessionChartData = courses.map(course => ({
@@ -59,6 +92,94 @@ const LecturerOverview = () => {
           <p className="page-subtitle">Your teaching dashboard</p>
         </div>
       </div>
+
+      {/* At-Risk Alert Banner */}
+      {atRiskData.length > 0 && (
+        <div style={{
+          backgroundColor: 'rgba(239,68,68,0.08)',
+          border: '1px solid rgba(239,68,68,0.3)',
+          borderRadius: 'var(--radius-md)',
+          padding: '1rem 1.25rem',
+          marginBottom: '1.5rem'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+            <FiAlertTriangle style={{ color: '#EF4444', fontSize: '1.25rem', flexShrink: 0 }} />
+            <p style={{ fontWeight: '700', color: '#EF4444' }}>
+              ⚠️ {atRiskData.length} student{atRiskData.length > 1 ? 's' : ''} at risk across your courses!
+            </p>
+          </div>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+            The following students have attendance below 75% and may be at risk:
+          </p>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+              <thead>
+                <tr>
+                  {['Student', 'Matric No.', 'Course', 'Attendance', 'Status'].map(h => (
+                    <th key={h} style={{
+                      textAlign: 'left', padding: '0.5rem 0.75rem',
+                      color: 'var(--text-muted)', fontWeight: '600',
+                      borderBottom: '1px solid rgba(239,68,68,0.2)'
+                    }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {atRiskData.map((item, index) => (
+                  <tr key={index} style={{
+                    borderBottom: '1px solid rgba(239,68,68,0.1)'
+                  }}>
+                    <td style={{ padding: '0.5rem 0.75rem', fontWeight: '500', color: 'var(--text-primary)' }}>
+                      {item.studentName}
+                    </td>
+                    <td style={{ padding: '0.5rem 0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                      {item.matricNumber || 'N/A'}
+                    </td>
+                    <td style={{ padding: '0.5rem 0.75rem', color: 'var(--text-secondary)' }}>
+                      {item.courseCode} — {item.courseName}
+                    </td>
+                    <td style={{ padding: '0.5rem 0.75rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <div style={{
+                          width: '60px', height: '6px',
+                          backgroundColor: 'var(--bg-tertiary)',
+                          borderRadius: '3px', overflow: 'hidden'
+                        }}>
+                          <div style={{
+                            width: `${item.percentage}%`, height: '100%',
+                            backgroundColor: item.percentage < 50 ? '#EF4444' : '#F59E0B',
+                            borderRadius: '3px'
+                          }} />
+                        </div>
+                        <span style={{
+                          fontWeight: '700',
+                          color: item.percentage < 50 ? '#EF4444' : '#F59E0B'
+                        }}>
+                          {item.percentage}%
+                        </span>
+                      </div>
+                    </td>
+                    <td style={{ padding: '0.5rem 0.75rem' }}>
+                      <span style={{
+                        padding: '0.2rem 0.6rem',
+                        borderRadius: '9999px',
+                        fontSize: '0.7rem',
+                        fontWeight: '600',
+                        backgroundColor: item.percentage < 50 ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)',
+                        color: item.percentage < 50 ? '#EF4444' : '#F59E0B'
+                      }}>
+                        {item.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Stat Cards */}
       <div className="stats-grid">
