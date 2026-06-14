@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiBook, FiCheckSquare, FiTrendingUp, FiAward } from 'react-icons/fi';
+import { FiBook, FiCheckSquare, FiTrendingUp, FiAward, FiAlertTriangle } from 'react-icons/fi';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import API from '../../api/axiosConfig';
 import { useAuth } from '../../context/AuthContext';
@@ -38,11 +38,14 @@ const StudentOverview = () => {
     return '#EF4444';
   };
 
+  // At-risk courses (below 75%)
+  const atRiskCourses = report.filter(r => r.percentage < 75);
+
   const statCards = [
-  { title: 'Enrolled Courses', value: report.length, icon: <FiBook />, color: '#4F46E5', bg: 'rgba(79,70,229,0.1)', path: '/student/courses' },
-  { title: 'Classes Attended', value: attendedClasses, icon: <FiCheckSquare />, color: '#10B981', bg: 'rgba(16,185,129,0.1)', path: '/student/attendance' },
-  { title: 'Total Classes', value: totalClasses, icon: <FiTrendingUp />, color: '#F59E0B', bg: 'rgba(245,158,11,0.1)', path: '/student/attendance' },
-  { title: 'Overall Attendance', value: `${overallPercentage}%`, icon: <FiAward />, color: getStatusColor(overallPercentage), bg: `${getStatusColor(overallPercentage)}20`, path: '/student/attendance' },
+    { title: 'Enrolled Courses', value: report.length, icon: <FiBook />, color: '#4F46E5', bg: 'rgba(79,70,229,0.1)', path: '/student/courses' },
+    { title: 'Classes Attended', value: attendedClasses, icon: <FiCheckSquare />, color: '#10B981', bg: 'rgba(16,185,129,0.1)', path: '/student/attendance' },
+    { title: 'Total Classes', value: totalClasses, icon: <FiTrendingUp />, color: '#F59E0B', bg: 'rgba(245,158,11,0.1)', path: '/student/attendance' },
+    { title: 'Overall Attendance', value: `${overallPercentage}%`, icon: <FiAward />, color: getStatusColor(overallPercentage), bg: `${getStatusColor(overallPercentage)}20`, path: '/student/attendance' },
   ];
 
   const chartData = report.map(r => ({
@@ -66,6 +69,49 @@ const StudentOverview = () => {
           <p className="page-subtitle">Here's your attendance overview</p>
         </div>
       </div>
+
+      {/* At-Risk Alert Banner */}
+      {atRiskCourses.length > 0 && (
+        <div style={{
+          backgroundColor: 'rgba(239,68,68,0.08)',
+          border: '1px solid rgba(239,68,68,0.3)',
+          borderRadius: 'var(--radius-md)',
+          padding: '1rem 1.25rem',
+          marginBottom: '1.5rem',
+          display: 'flex',
+          gap: '0.75rem',
+          alignItems: 'flex-start'
+        }}>
+          <FiAlertTriangle style={{
+            color: '#EF4444', fontSize: '1.25rem',
+            flexShrink: 0, marginTop: '0.1rem'
+          }} />
+          <div>
+            <p style={{ fontWeight: '700', color: '#EF4444', marginBottom: '0.25rem' }}>
+              ⚠️ Attendance Alert — {atRiskCourses.length} course{atRiskCourses.length > 1 ? 's' : ''} below 75%!
+            </p>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+              You are at risk of failing the following course{atRiskCourses.length > 1 ? 's' : ''} due to low attendance:
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              {atRiskCourses.map(r => (
+                <span key={r.course.id} style={{
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '9999px',
+                  fontSize: '0.75rem',
+                  fontWeight: '600',
+                  backgroundColor: r.percentage < 50
+                    ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)',
+                  color: r.percentage < 50 ? '#EF4444' : '#F59E0B',
+                  border: `1px solid ${r.percentage < 50 ? 'rgba(239,68,68,0.3)' : 'rgba(245,158,11,0.3)'}`
+                }}>
+                  {r.course.code} — {r.percentage}%
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stat Cards */}
       <div className="stats-grid">
@@ -114,7 +160,11 @@ const StudentOverview = () => {
         gap: '1.5rem'
       }}>
         {report.map((item) => (
-          <div key={item.course.id} className="card">
+          <div key={item.course.id} className="card" style={{
+            border: item.percentage < 75
+              ? `1px solid ${item.percentage < 50 ? 'rgba(239,68,68,0.3)' : 'rgba(245,158,11,0.3)'}`
+              : '1px solid var(--border-color)'
+          }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
               <div>
                 <span className="badge badge-primary" style={{ marginBottom: '0.5rem' }}>
