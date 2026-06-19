@@ -166,9 +166,9 @@ const fetchData = async () => {
               </div>
 
               {/* Details */}
-              <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                <p style={{ marginBottom: '0.5rem' }}>📁 {course.department}</p>
-                <p style={{ marginBottom: '0.5rem' }}>📅 {course.semester} Semester • {course.academicYear}</p>
+<div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+  <p style={{ marginBottom: '0.5rem' }}>🏛️ {course.department}</p>
+  <p style={{ marginBottom: '0.5rem' }}>📅 {course.semester} Semester • {course.academicYear}</p>
                 {course.description && (
                   <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.5rem' }}>
                     {course.description}

@@ -259,12 +259,12 @@ const AdminCourses = () => {
               </div>
 
               {/* Course Info */}
-              <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-                <p>📁 {course.department}</p>
-                <p>👨‍🏫 {course.lecturer?.fullName || 'No lecturer assigned'}</p>
-                <p>📅 {course.semester} Semester • {course.academicYear}</p>
-                <p>⭐ {course.credits} Credits</p>
-              </div>
+<div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+  <p>🏛️ {course.department}</p>
+  <p>👤 {course.lecturer?.fullName || 'No lecturer assigned'}</p>
+  <p>📅 {course.semester} Semester • {course.academicYear}</p>
+  <p>⭐ {course.credits} Credits</p>
+</div>
 
               {/* Students */}
               <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>

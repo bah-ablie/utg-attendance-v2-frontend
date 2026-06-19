@@ -76,12 +76,12 @@ const StudentCourses = () => {
                 </h3>
               </div>
 
-              <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                <p style={{ marginBottom: '0.5rem' }}>📁 {course.department}</p>
-                <p style={{ marginBottom: '0.5rem' }}>👨‍🏫 {course.lecturer?.fullName || 'N/A'}</p>
-                <p style={{ marginBottom: '0.5rem' }}>📅 {course.semester} Semester • {course.academicYear}</p>
-                <p>⭐ {course.credits} Credits</p>
-              </div>
+             <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+  <p style={{ marginBottom: '0.5rem' }}>🏛️ {course.department}</p>
+  <p style={{ marginBottom: '0.5rem' }}>👤 {course.lecturer?.fullName || 'N/A'}</p>
+  <p style={{ marginBottom: '0.5rem' }}>📅 {course.semester} Semester • {course.academicYear}</p>
+  <p>⭐ {course.credits} Credits</p>
+</div>
 
               <div style={{
                 marginTop: '1rem', padding: '0.75rem',
