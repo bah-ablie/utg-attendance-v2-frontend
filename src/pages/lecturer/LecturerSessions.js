@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FiPlus, FiX, FiRefreshCw, FiLock, FiFilter, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiX, FiRefreshCw, FiLock, FiFilter, FiTrash2, FiSearch, FiChevronDown } from 'react-icons/fi';
 import { QRCodeCanvas } from 'qrcode.react';
 import API from '../../api/axiosConfig';
 import toast from 'react-hot-toast';
@@ -12,12 +12,25 @@ const LecturerSessions = () => {
   const [activeQR, setActiveQR] = useState(null);
   const [timeLeft, setTimeLeft] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState('all');
+  const [showCoursePicker, setShowCoursePicker] = useState(false);
+  const [courseSearch, setCourseSearch] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const timerRef = useRef(null);
   const [formData, setFormData] = useState({
     course: '', startTime: '', endTime: '', venue: '', notes: ''
   });
 
   useEffect(() => { fetchData(); }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('.course-picker-container')) {
+        setShowCoursePicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (timeLeft === null) return;
@@ -48,6 +61,7 @@ const LecturerSessions = () => {
 
   const handleCreateSession = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     try {
       const response = await API.post('/sessions', formData);
       const { session } = response.data;
@@ -60,10 +74,13 @@ const LecturerSessions = () => {
       setTimeLeft(300);
       setShowModal(false);
       setFormData({ course: '', startTime: '', endTime: '', venue: '', notes: '' });
+      setCourseSearch('');
       toast.success('Session created! QR code is active for 5 minutes!');
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Error creating session');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -119,10 +136,16 @@ const LecturerSessions = () => {
     return '#EF4444';
   };
 
-  // Filter sessions by course
   const filteredSessions = selectedCourse === 'all'
     ? sessions
     : sessions.filter(s => s.course?._id === selectedCourse);
+
+  const filteredCourseOptions = courses.filter(course =>
+    course.courseName.toLowerCase().includes(courseSearch.toLowerCase()) ||
+    course.courseCode.toLowerCase().includes(courseSearch.toLowerCase())
+  );
+
+  const selectedCourseData = courses.find(c => c._id === formData.course);
 
   if (loading) return (
     <div className="loading-spinner" style={{ height: '100vh' }}>
@@ -211,7 +234,6 @@ const LecturerSessions = () => {
             All Sessions ({filteredSessions.length})
           </h3>
 
-          {/* Course Filter */}
           {courses.length > 1 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
               <div style={{
@@ -332,22 +354,128 @@ const LecturerSessions = () => {
               </button>
             </div>
             <form onSubmit={handleCreateSession}>
+
+              {/* Searchable Course Picker */}
               <div className="form-group">
                 <label className="form-label">Course</label>
-                <select
-                  className="form-control"
+                <div className="course-picker-container" style={{ position: 'relative' }}>
+                  <div
+                    onClick={() => setShowCoursePicker(!showCoursePicker)}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '0.625rem 1rem',
+                      borderRadius: 'var(--radius-md)',
+                      border: `1px solid ${showCoursePicker ? 'var(--primary)' : 'var(--border-color)'}`,
+                      backgroundColor: 'var(--bg-secondary)',
+                      cursor: 'pointer',
+                      boxShadow: showCoursePicker ? '0 0 0 3px rgba(79,70,229,0.1)' : 'none',
+                      minHeight: '42px'
+                    }}
+                  >
+                    <span style={{
+                      fontSize: '0.875rem',
+                      color: selectedCourseData ? 'var(--text-primary)' : 'var(--text-muted)'
+                    }}>
+                      {selectedCourseData
+                        ? `${selectedCourseData.courseName} (${selectedCourseData.courseCode})`
+                        : 'Select a course...'}
+                    </span>
+                    <FiChevronDown style={{
+                      color: 'var(--text-muted)', flexShrink: 0,
+                      transform: showCoursePicker ? 'rotate(180deg)' : 'rotate(0)',
+                      transition: 'transform 0.2s ease'
+                    }} />
+                  </div>
+
+                  {showCoursePicker && (
+                    <div style={{
+                      position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
+                      backgroundColor: 'var(--card-bg)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: 'var(--radius-md)',
+                      boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                      zIndex: 1000, overflow: 'hidden'
+                    }}>
+                      {/* Search */}
+                      <div style={{
+                        padding: '0.5rem',
+                        borderBottom: '1px solid var(--border-color)',
+                        display: 'flex', alignItems: 'center', gap: '0.5rem',
+                        backgroundColor: 'var(--bg-tertiary)'
+                      }}>
+                        <FiSearch style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                        <input
+                          autoFocus
+                          type="text"
+                          placeholder="Search by name or code..."
+                          value={courseSearch}
+                          onChange={(e) => setCourseSearch(e.target.value)}
+                          style={{
+                            border: 'none', outline: 'none',
+                            background: 'transparent',
+                            fontSize: '0.875rem',
+                            color: 'var(--text-primary)', width: '100%'
+                          }}
+                        />
+                        {courseSearch && (
+                          <FiX
+                            onClick={() => setCourseSearch('')}
+                            style={{ color: 'var(--text-muted)', cursor: 'pointer', flexShrink: 0 }}
+                          />
+                        )}
+                      </div>
+
+                      {/* Options */}
+                      <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                        {filteredCourseOptions.length === 0 ? (
+                          <div style={{
+                            padding: '1rem', textAlign: 'center',
+                            color: 'var(--text-muted)', fontSize: '0.875rem'
+                          }}>
+                            No courses found
+                          </div>
+                        ) : (
+                          filteredCourseOptions.map(course => (
+                            <div
+                              key={course._id}
+                              onClick={() => {
+                                setFormData({ ...formData, course: course._id });
+                                setShowCoursePicker(false);
+                                setCourseSearch('');
+                              }}
+                              style={{
+                                padding: '0.625rem 1rem', cursor: 'pointer',
+                                fontSize: '0.875rem',
+                                backgroundColor: formData.course === course._id
+                                  ? 'rgba(79,70,229,0.1)' : 'transparent',
+                                borderLeft: formData.course === course._id
+                                  ? '3px solid #4F46E5' : '3px solid transparent',
+                                transition: 'all 0.1s ease'
+                              }}
+                            >
+                              <div style={{ fontWeight: '500', color: 'var(--text-primary)' }}>
+                                {course.courseName}
+                              </div>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                {course.courseCode} • {course.department}
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {/* Hidden input for form validation */}
+                <input
+                  type="text"
                   value={formData.course}
-                  onChange={(e) => setFormData({ ...formData, course: e.target.value })}
                   required
-                >
-                  <option value="">Select Course</option>
-                  {courses.map((course) => (
-                    <option key={course._id} value={course._id}>
-                      {course.courseName} ({course.courseCode})
-                    </option>
-                  ))}
-                </select>
+                  onChange={() => {}}
+                  style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', height: 0 }}
+                />
               </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div className="form-group">
                   <label className="form-label">Start Time</label>
@@ -388,11 +516,12 @@ const LecturerSessions = () => {
                 />
               </div>
               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                <button type="button" className="btn btn-outline" onClick={() => setShowModal(false)}>
+                <button type="button" className="btn btn-outline"
+                  onClick={() => setShowModal(false)} disabled={submitting}>
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  Create Session
+                <button type="submit" className="btn btn-primary" disabled={submitting}>
+                  {submitting ? 'Creating...' : 'Create Session'}
                 </button>
               </div>
             </form>
