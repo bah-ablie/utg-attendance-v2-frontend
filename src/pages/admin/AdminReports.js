@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiDownload, FiBarChart2, FiSearch, FiX, FiChevronDown } from 'react-icons/fi';
+import { FiDownload, FiBarChart2, FiSearch, FiX, FiChevronDown, FiFileText } from 'react-icons/fi';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import API from '../../api/axiosConfig';
 import toast from 'react-hot-toast';
@@ -11,15 +11,11 @@ const AdminReports = () => {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [coursesLoading, setCoursesLoading] = useState(true);
-
-  // Course picker state
   const [showCoursePicker, setShowCoursePicker] = useState(false);
   const [courseSearch, setCourseSearch] = useState('');
   const [filterDept, setFilterDept] = useState('all');
 
-  useEffect(() => {
-    fetchCourses();
-  }, []);
+  useEffect(() => { fetchCourses(); }, []);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -60,7 +56,6 @@ const AdminReports = () => {
 
   const exportToExcel = () => {
     if (!report) return;
-
     const data = report.report.map((item) => ({
       'Full Name': item.student.fullName,
       'Email': item.student.email,
@@ -71,12 +66,140 @@ const AdminReports = () => {
       'Attendance %': `${item.percentage}%`,
       'Status': item.status
     }));
-
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Attendance Report');
     XLSX.writeFile(wb, `${report.course.code}_attendance_report.xlsx`);
-    toast.success('Report exported successfully!');
+    toast.success('Excel exported successfully!');
+  };
+
+  const exportToPDF = () => {
+    if (!report) return;
+
+    const printWindow = window.open('', '_blank');
+    const date = new Date().toLocaleDateString();
+
+    const rows = report.report.map(item => `
+      <tr style="border-bottom: 1px solid #e5e7eb;">
+        <td style="padding: 10px 12px;">
+          <div style="font-weight: 600; color: #111827;">${item.student.fullName}</div>
+          <div style="font-size: 11px; color: #6b7280;">${item.student.email}</div>
+        </td>
+        <td style="padding: 10px 12px; font-family: monospace; font-size: 12px;">${item.student.matriculationNumber || 'N/A'}</td>
+        <td style="padding: 10px 12px; text-align: center;">${item.attendanceCount}</td>
+        <td style="padding: 10px 12px; text-align: center;">${item.totalSessions}</td>
+        <td style="padding: 10px 12px; text-align: center; font-weight: 700; color: ${
+          item.percentage >= 75 ? '#10B981' : item.percentage >= 50 ? '#F59E0B' : '#EF4444'
+        };">${item.percentage}%</td>
+        <td style="padding: 10px 12px; text-align: center;">
+          <span style="
+            padding: 3px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700;
+            background-color: ${item.status === 'Good' ? '#d1fae5' : item.status === 'Average' ? '#fef3c7' : '#fee2e2'};
+            color: ${item.status === 'Good' ? '#065f46' : item.status === 'Average' ? '#92400e' : '#991b1b'};
+          ">${item.status}</span>
+        </td>
+      </tr>
+    `).join('');
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Attendance Report - ${report.course.name}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: Arial, sans-serif; color: #111827; padding: 40px; }
+          @media print {
+            body { padding: 20px; }
+            .no-print { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <!-- Header -->
+        <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #4F46E5; padding-bottom: 20px;">
+          <h1 style="font-size: 24px; color: #4F46E5; margin-bottom: 4px;">UTG Attendance System</h1>
+          <h2 style="font-size: 16px; color: #374151; font-weight: 500;">Attendance Report</h2>
+        </div>
+
+        <!-- Course Info -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; background: #f9fafb; padding: 16px; border-radius: 8px; border: 1px solid #e5e7eb;">
+          <div>
+            <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Course</div>
+            <div style="font-weight: 700; font-size: 15px;">${report.course.name}</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Course Code</div>
+            <div style="font-weight: 700; font-size: 15px;">${report.course.code}</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Department</div>
+            <div style="font-weight: 600;">${report.course.department}</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Generated On</div>
+            <div style="font-weight: 600;">${date}</div>
+          </div>
+        </div>
+
+        <!-- Summary -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px;">
+          <div style="background: #ede9fe; padding: 14px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 800; color: #4F46E5;">${report.totalSessions}</div>
+            <div style="font-size: 11px; color: #5b21b6; font-weight: 600;">Total Sessions</div>
+          </div>
+          <div style="background: #d1fae5; padding: 14px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 800; color: #10B981;">${report.totalStudents}</div>
+            <div style="font-size: 11px; color: #065f46; font-weight: 600;">Total Students</div>
+          </div>
+          <div style="background: #d1fae5; padding: 14px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 800; color: #10B981;">${report.report.filter(r => r.status === 'Good').length}</div>
+            <div style="font-size: 11px; color: #065f46; font-weight: 600;">Good Attendance</div>
+          </div>
+          <div style="background: #fee2e2; padding: 14px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 800; color: #EF4444;">${report.report.filter(r => r.status === 'Poor').length}</div>
+            <div style="font-size: 11px; color: #991b1b; font-weight: 600;">Poor Attendance</div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <table style="width: 100%; border-collapse: collapse; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+          <thead>
+            <tr style="background: #4F46E5; color: white;">
+              <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 700;">Student</th>
+              <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 700;">Matric No.</th>
+              <th style="padding: 12px; text-align: center; font-size: 12px; font-weight: 700;">Attended</th>
+              <th style="padding: 12px; text-align: center; font-size: 12px; font-weight: 700;">Total</th>
+              <th style="padding: 12px; text-align: center; font-size: 12px; font-weight: 700;">Percentage</th>
+              <th style="padding: 12px; text-align: center; font-size: 12px; font-weight: 700;">Status</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+
+        <!-- Footer -->
+        <div style="margin-top: 30px; text-align: center; font-size: 11px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 16px;">
+          Generated by UTG Attendance Management System • University of The Gambia • ${date}
+        </div>
+
+        <!-- Print Button -->
+        <div class="no-print" style="margin-top: 24px; text-align: center;">
+          <button onclick="window.print()" style="
+            background: #4F46E5; color: white; border: none; padding: 12px 32px;
+            border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+            margin-right: 12px;
+          ">🖨️ Print / Save as PDF</button>
+          <button onclick="window.close()" style="
+            background: #f3f4f6; color: #374151; border: none; padding: 12px 32px;
+            border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+          ">Close</button>
+        </div>
+      </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    toast.success('PDF preview opened!');
   };
 
   const getStatusColor = (status) => {
@@ -92,10 +215,8 @@ const AdminReports = () => {
     total: item.totalSessions
   })) || [];
 
-  // Unique departments from courses
   const departments = [...new Set(courses.map(c => c.department))].sort();
 
-  // Filter courses for the picker
   const filteredCourseOptions = courses.filter(course => {
     const matchesSearch =
       course.courseName.toLowerCase().includes(courseSearch.toLowerCase()) ||
@@ -121,9 +242,14 @@ const AdminReports = () => {
           <p className="page-subtitle">View and export attendance reports</p>
         </div>
         {report && (
-          <button className="btn btn-success" onClick={exportToExcel}>
-            <FiDownload /> Export Excel
-          </button>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button className="btn btn-outline" onClick={exportToPDF}>
+              <FiFileText /> Export PDF
+            </button>
+            <button className="btn btn-success" onClick={exportToExcel}>
+              <FiDownload /> Export Excel
+            </button>
+          </div>
         )}
       </div>
 
@@ -133,8 +259,6 @@ const AdminReports = () => {
           Select Course
         </h3>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-
-          {/* Searchable Course Picker */}
           <div className="course-picker-container" style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
             <div
               onClick={() => setShowCoursePicker(!showCoursePicker)}
@@ -165,7 +289,6 @@ const AdminReports = () => {
               }} />
             </div>
 
-            {/* Dropdown */}
             {showCoursePicker && (
               <div style={{
                 position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
@@ -173,7 +296,6 @@ const AdminReports = () => {
                 borderRadius: 'var(--radius-md)', boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
                 zIndex: 1000, overflow: 'hidden'
               }}>
-                {/* Search */}
                 <div style={{
                   padding: '0.5rem', borderBottom: '1px solid var(--border-color)',
                   display: 'flex', alignItems: 'center', gap: '0.5rem',
@@ -196,42 +318,29 @@ const AdminReports = () => {
                   )}
                 </div>
 
-                {/* Department Filter */}
                 {departments.length > 0 && (
                   <div style={{
                     padding: '0.5rem', borderBottom: '1px solid var(--border-color)',
                     display: 'flex', gap: '0.4rem', flexWrap: 'wrap',
                     backgroundColor: 'var(--bg-tertiary)'
                   }}>
-                    <button
-                      onClick={() => setFilterDept('all')}
-                      style={{
+                    <button onClick={() => setFilterDept('all')} style={{
+                      padding: '0.25rem 0.7rem', borderRadius: '9999px', border: 'none',
+                      cursor: 'pointer', fontSize: '0.7rem', fontWeight: '600',
+                      backgroundColor: filterDept === 'all' ? '#4F46E5' : 'var(--bg-secondary)',
+                      color: filterDept === 'all' ? 'white' : 'var(--text-secondary)'
+                    }}>All</button>
+                    {departments.map(dept => (
+                      <button key={dept} onClick={() => setFilterDept(dept)} style={{
                         padding: '0.25rem 0.7rem', borderRadius: '9999px', border: 'none',
                         cursor: 'pointer', fontSize: '0.7rem', fontWeight: '600',
-                        backgroundColor: filterDept === 'all' ? '#4F46E5' : 'var(--bg-secondary)',
-                        color: filterDept === 'all' ? 'white' : 'var(--text-secondary)'
-                      }}
-                    >
-                      All
-                    </button>
-                    {departments.map(dept => (
-                      <button
-                        key={dept}
-                        onClick={() => setFilterDept(dept)}
-                        style={{
-                          padding: '0.25rem 0.7rem', borderRadius: '9999px', border: 'none',
-                          cursor: 'pointer', fontSize: '0.7rem', fontWeight: '600',
-                          backgroundColor: filterDept === dept ? '#4F46E5' : 'var(--bg-secondary)',
-                          color: filterDept === dept ? 'white' : 'var(--text-secondary)'
-                        }}
-                      >
-                        {dept}
-                      </button>
+                        backgroundColor: filterDept === dept ? '#4F46E5' : 'var(--bg-secondary)',
+                        color: filterDept === dept ? 'white' : 'var(--text-secondary)'
+                      }}>{dept}</button>
                     ))}
                   </div>
                 )}
 
-                {/* Options */}
                 <div style={{ maxHeight: '240px', overflowY: 'auto' }}>
                   {filteredCourseOptions.length === 0 ? (
                     <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
@@ -267,11 +376,7 @@ const AdminReports = () => {
             )}
           </div>
 
-          <button
-            className="btn btn-primary"
-            onClick={fetchReport}
-            disabled={loading}
-          >
+          <button className="btn btn-primary" onClick={fetchReport} disabled={loading}>
             {loading ? 'Loading...' : 'Generate Report'}
           </button>
         </div>
@@ -280,7 +385,6 @@ const AdminReports = () => {
       {/* Report */}
       {report && (
         <>
-          {/* Summary Cards */}
           <div className="stats-grid" style={{ marginBottom: '1.5rem' }}>
             <div className="stat-card">
               <div className="stat-card-icon" style={{ backgroundColor: 'rgba(79,70,229,0.1)', color: '#4F46E5' }}>
@@ -320,7 +424,6 @@ const AdminReports = () => {
             </div>
           </div>
 
-          {/* Chart */}
           <div className="card" style={{ marginBottom: '1.5rem' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '1.5rem' }}>
               Attendance Percentage by Student
@@ -343,7 +446,6 @@ const AdminReports = () => {
             </ResponsiveContainer>
           </div>
 
-          {/* Report Table */}
           <div className="card">
             <h3 style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '1rem' }}>
               {report.course.name} ({report.course.code}) — Detailed Report
@@ -379,8 +481,7 @@ const AdminReports = () => {
                             borderRadius: '3px', overflow: 'hidden', minWidth: '60px'
                           }}>
                             <div style={{
-                              width: `${item.percentage}%`,
-                              height: '100%',
+                              width: `${item.percentage}%`, height: '100%',
                               backgroundColor: getStatusColor(item.status),
                               borderRadius: '3px'
                             }} />
@@ -392,10 +493,8 @@ const AdminReports = () => {
                       </td>
                       <td>
                         <span style={{
-                          padding: '0.25rem 0.75rem',
-                          borderRadius: '9999px',
-                          fontSize: '0.75rem',
-                          fontWeight: '600',
+                          padding: '0.25rem 0.75rem', borderRadius: '9999px',
+                          fontSize: '0.75rem', fontWeight: '600',
                           backgroundColor: `${getStatusColor(item.status)}20`,
                           color: getStatusColor(item.status)
                         }}>
