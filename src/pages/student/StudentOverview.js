@@ -38,8 +38,8 @@ const StudentOverview = () => {
     return '#EF4444';
   };
 
-  // At-risk courses (below 75%)
-  const atRiskCourses = report.filter(r => r.percentage < 75);
+  // At-risk courses — only show after closed sessions exist
+  const atRiskCourses = report.filter(r => r.totalSessions > 0 && r.percentage < 75);
 
   const statCards = [
     { title: 'Enrolled Courses', value: report.length, icon: <FiBook />, color: '#4F46E5', bg: 'rgba(79,70,229,0.1)', path: '/student/courses' },
@@ -70,7 +70,7 @@ const StudentOverview = () => {
         </div>
       </div>
 
-      {/* At-Risk Alert Banner */}
+      {/* At-Risk Alert Banner — only shows when there are closed sessions */}
       {atRiskCourses.length > 0 && (
         <div style={{
           backgroundColor: 'rgba(239,68,68,0.08)',
@@ -161,7 +161,7 @@ const StudentOverview = () => {
       }}>
         {report.map((item) => (
           <div key={item.course.id} className="card" style={{
-            border: item.percentage < 75
+            border: item.totalSessions > 0 && item.percentage < 75
               ? `1px solid ${item.percentage < 50 ? 'rgba(239,68,68,0.3)' : 'rgba(245,158,11,0.3)'}`
               : '1px solid var(--border-color)'
           }}>
@@ -182,7 +182,7 @@ const StudentOverview = () => {
                 backgroundColor: `${getStatusColor(item.percentage)}20`,
                 color: getStatusColor(item.percentage)
               }}>
-                {item.status}
+                {item.totalSessions === 0 ? 'No Sessions' : item.status}
               </span>
             </div>
 
@@ -211,7 +211,9 @@ const StudentOverview = () => {
             </div>
 
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              {item.percentage >= 75
+              {item.totalSessions === 0
+                ? '📅 No sessions held yet'
+                : item.percentage >= 75
                 ? '✅ Good attendance! Keep it up!'
                 : item.percentage >= 50
                 ? '⚠️ Attendance needs improvement'

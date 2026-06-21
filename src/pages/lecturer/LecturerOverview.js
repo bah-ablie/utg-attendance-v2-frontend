@@ -24,6 +24,14 @@ const LecturerOverview = () => {
       setCourses(coursesRes.data);
       setSessions(sessionsRes.data);
 
+      // Only check at-risk if there are closed sessions
+      const closedSessions = sessionsRes.data.filter(s => !s.isActive);
+
+      if (closedSessions.length === 0) {
+        setAtRiskData([]);
+        return;
+      }
+
       // Fetch attendance reports for each course to find at-risk students
       const reports = await Promise.all(
         coursesRes.data.map(course =>
@@ -33,12 +41,20 @@ const LecturerOverview = () => {
         )
       );
 
-      // Collect at-risk students (below 75%) across all courses
+      // Collect at-risk students (below 75%) — only if course has closed sessions
       const atRisk = [];
       reports.forEach(item => {
         if (!item) return;
+
+        // Check if this course has any closed sessions
+        const courseHasClosedSessions = closedSessions.some(
+          s => s.course?._id === item.course._id || s.course === item.course._id
+        );
+        if (!courseHasClosedSessions) return;
+
         item.report.report.forEach(student => {
-          if (student.percentage < 75) {
+          // Only flag if there are actual sessions and attendance is below 75%
+          if (student.totalSessions > 0 && student.percentage < 75) {
             atRisk.push({
               studentName: student.student.fullName,
               matricNumber: student.student.matriculationNumber,
@@ -128,9 +144,7 @@ const LecturerOverview = () => {
               </thead>
               <tbody>
                 {atRiskData.map((item, index) => (
-                  <tr key={index} style={{
-                    borderBottom: '1px solid rgba(239,68,68,0.1)'
-                  }}>
+                  <tr key={index} style={{ borderBottom: '1px solid rgba(239,68,68,0.1)' }}>
                     <td style={{ padding: '0.5rem 0.75rem', fontWeight: '500', color: 'var(--text-primary)' }}>
                       {item.studentName}
                     </td>
